@@ -1,7 +1,7 @@
 {
   "luci-app-singbox": {
-    "description": "Sing-Box panel",
-    "read": { "ubus": { "session": [ "access" ] } },
-    "write": {}
+    "description": "Sing-Box 管理与面板",
+    "read": { "ubus": { "singbox": [ "status" ] } },
+    "write": { "ubus": { "singbox": [ "update_rules", "upgrade", "restart", "rollback" ] } }
   }
 }

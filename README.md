@@ -184,7 +184,26 @@ http://<路由器IP>:9090/ui/
 LuCI → 服务 → Sing-Box
 ```
 
-页面内嵌面板（iframe），另有链接可新窗口打开。
+页面上半部分是运维操作，下半部分内嵌面板（iframe）。
+
+**按钮：**
+
+| 按钮 | 作用 |
+|---|---|
+| 更新 geosite/geoip | 立即拉取最新规则集并重载 |
+| 升级内核 | 检测最新版 → 下载 → 校验 → 重启；配置不兼容或启动失败自动回滚 |
+| 重启服务 | 重启 sing-box |
+| 回滚到 homeproxy | 停止 sing-box，启动 homeproxy |
+
+后端走 rpcd（`/usr/libexec/rpcd/singbox`），不是裸 CGI，有 LuCI 会话权限校验：
+
+```sh
+ubus call singbox status
+ubus call singbox update_rules
+ubus call singbox upgrade
+ubus call singbox restart
+ubus call singbox rollback
+```
 
 隐藏 homeproxy 菜单：
 

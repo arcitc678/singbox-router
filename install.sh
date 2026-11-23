@@ -59,7 +59,7 @@ curl -sSL -m 120 -o "$SB_DIR/geosite-cn.srs" "$GH_RAW/sing-geosite/rule-set/geos
 curl -sSL -m 120 -o "$SB_DIR/geoip-cn.srs"   "$GH_RAW/sing-geoip/rule-set/geoip-cn.srs" || true
 
 say "5/8 安装脚本"
-for f in nft-up.sh nft-down.sh watchdog.sh update-rules.sh rollback.sh; do
+for f in nft-up.sh nft-down.sh watchdog.sh update-rules.sh rollback.sh upgrade.sh; do
   cp "./scripts/$f" "$SB_DIR/$f"
   chmod +x "$SB_DIR/$f"
 done
@@ -71,10 +71,13 @@ mkdir -p "$SB_DIR/ui"
 cp ./panel/index.html "$SB_DIR/ui/index.html"
 
 say "7/8 安装 LuCI 入口"
-mkdir -p /www/luci-static/resources/view/singbox /usr/share/luci/menu.d /usr/share/rpcd/acl.d
+mkdir -p /www/luci-static/resources/view/singbox /usr/share/luci/menu.d /usr/share/rpcd/acl.d /usr/libexec/rpcd
 cp ./luci/main.js   /www/luci-static/resources/view/singbox/main.js
 cp ./luci/menu.json /usr/share/luci/menu.d/luci-app-singbox.json
 cp ./luci/acl.json  /usr/share/rpcd/acl.d/luci-app-singbox.json
+cp ./rpcd/singbox   /usr/libexec/rpcd/singbox
+chmod +x /usr/libexec/rpcd/singbox
+/etc/init.d/rpcd restart >/dev/null 2>&1 || true
 [ -f /usr/share/luci/menu.d/luci-app-homeproxy.json ] && \
   mv /usr/share/luci/menu.d/luci-app-homeproxy.json /usr/share/luci/menu.d/luci-app-homeproxy.json.disabled
 rm -f /tmp/luci-indexcache* 2>/dev/null

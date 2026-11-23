@@ -1,0 +1,47 @@
+#!/bin/sh
+# rpcd 插件：给 LuCI 提供 sing-box 运维操作
+# 调用方式：ubus call singbox <method>
+
+SB=/etc/sing-box
+
+status_json() {
+  ver=$($SB/sing-box version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[0-9a-zA-Z.\-]*')
+  if pgrep -f "/etc/sing-box/sing-box run" >/dev/null 2>&1; then running=1; else running=0; fi
+  [ -n "$ver" ] || ver="unknown"
+  printf '{"running":%s,"version":"%s"}' "$running" "$ver"
+}
+
+case "$1" in
+  list)
+    echo '{"status":{},"update_rules":{},"upgrade":{},"restart":{},"rollback":{}}'
+    ;;
+  call)
+    case "$2" in
+      status)
+        status_json
+        ;;
+      update_rules)
+        $SB/update-rules.sh >/dev/null 2>&1
+        log=$(tail -n 12 /tmp/sb_rules_update.log 2>/dev/null | tr '\n' '|' | sed 's/"/\\"/g')
+        printf '{"ok":true,"log":"%s"}' "$log"
+        ;;
+      upgrade)
+        out=$($SB/upgrade.sh 2>&1 | tail -n 20 | tr '\n' '|' | sed 's/"/\\"/g')
+        printf '{"ok":true,"log":"%s"}' "$out"
+        ;;
+      restart)
+        /etc/init.d/sing-box restart >/dev/null 2>&1
+        sleep 5
+        status_json
+        ;;
+      rollback)
+        $SB/rollback.sh >/dev/null 2>&1
+        sleep 3
+        printf '{"ok":true}'
+        ;;
+      *)
+        echo '{"ok":false,"error":"unknown method"}'
+        ;;
+    esac
+    ;;
+esac
