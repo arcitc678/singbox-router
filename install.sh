@@ -59,7 +59,7 @@ curl -sSL -m 120 -o "$SB_DIR/geosite-cn.srs" "$GH_RAW/sing-geosite/rule-set/geos
 curl -sSL -m 120 -o "$SB_DIR/geoip-cn.srs"   "$GH_RAW/sing-geoip/rule-set/geoip-cn.srs" || true
 
 say "5/8 安装脚本"
-for f in nft-up.sh nft-down.sh watchdog.sh update-rules.sh rollback.sh upgrade.sh; do
+for f in nft-up.sh nft-down.sh watchdog.sh update-rules.sh update-cn.sh rollback.sh upgrade.sh; do
   cp "./scripts/$f" "$SB_DIR/$f"
   chmod +x "$SB_DIR/$f"
 done
@@ -84,6 +84,13 @@ rm -f /tmp/luci-indexcache* 2>/dev/null
 /etc/init.d/uhttpd reload >/dev/null 2>&1 || true
 
 say "8/8 启动与定时任务"
+# 国内 IP 段
+sh "$SB_DIR/update-cn.sh" || true
+# hotplug 钩子
+mkdir -p /etc/hotplug.d/iface
+cp ./hotplug/99-singbox /etc/hotplug.d/iface/99-singbox
+cp ./hotplug/99-singbox-fw /etc/hotplug.d/iface/99-singbox-fw
+chmod +x /etc/hotplug.d/iface/99-singbox*
 "$SB_DIR/sing-box" check -c "$SB_DIR/config.json" || die "配置校验失败，请检查 config.json"
 /etc/init.d/sing-box enable
 /etc/init.d/sing-box start
@@ -92,6 +99,7 @@ sleep 5
 crontab -l 2>/dev/null | grep -v "sing-box/watchdog\|sing-box/update-rules" > /tmp/ct.$$
 echo "*/2 * * * * /etc/sing-box/watchdog.sh >/dev/null 2>&1" >> /tmp/ct.$$
 echo "30 4 * * 1 /etc/sing-box/update-rules.sh" >> /tmp/ct.$$
+echo "30 4 * * 1 /etc/sing-box/update-cn.sh" >> /tmp/ct.$$
 crontab /tmp/ct.$$
 rm -f /tmp/ct.$$
 

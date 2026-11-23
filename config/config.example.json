@@ -52,6 +52,13 @@
       "tag": "mixed-in",
       "listen": "127.0.0.1",
       "listen_port": 7890
+    },
+    {
+      "type": "direct",
+      "tag": "dns-in",
+      "listen": "127.0.0.1",
+      "listen_port": 5353,
+      "network": "udp"
     }
   ],
   "outbounds": [
@@ -506,6 +513,12 @@
     "rules": [
       {
         "action": "sniff"
+      },
+      {
+        "inbound": [
+          "dns-in"
+        ],
+        "action": "hijack-dns"
       },
       {
         "clash_mode": "Direct",

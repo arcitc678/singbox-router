@@ -1,0 +1,12 @@
+#!/bin/sh
+# WAN 起来或防火墙重载时，确保 tproxy 规则存在
+[ "$ACTION" = "ifup" ] || exit 0
+[ "$INTERFACE" = "wan" ] || exit 0
+
+# 规则已存在就不动（避免断连接）
+if nft list table inet sb >/dev/null 2>&1; then
+    exit 0
+fi
+
+logger -t singbox "WAN up，重建 tproxy 规则"
+/etc/sing-box/nft-up.sh

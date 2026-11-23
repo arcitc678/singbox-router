@@ -128,6 +128,74 @@ echo "30 4 * * 1 /etc/sing-box/update-rules.sh" >> /tmp/ct
 crontab /tmp/ct
 ```
 
+
+## 国内 IP 绕过（微信长连接不再经过代理）
+
+`nft-up.sh` 里在 tproxy 之前加一条：
+
+```
+ip daddr @cn4 return
+```
+
+`@cn4` 是从 APNIC 拉的中国 IPv4 段（约 8800 条，auto-merge 后 3200 条），每周更新一次：
+
+```sh
+/etc/sing-box/update-cn.sh      # 只刷集合，不动链，不断连接
+```
+
+效果：
+
+- 国内流量走内核转发，完全不进 sing-box
+- 微信/QQ 的长连接不受 sing-box 重启、切节点、规则重载影响
+- 国外流量照常进 tproxy
+
+验证某个 IP 在不在集合里：
+
+```sh
+nft get element inet sb cn4 { 223.5.5.5 }
+```
+
+## DNS 入站
+
+sing-box 没有独立的 dns inbound，用 `direct` 入站 + `hijack-dns`：
+
+```jsonc
+{ "type": "direct", "tag": "dns-in", "listen": "127.0.0.1", "listen_port": 5353, "network": "udp" }
+```
+
+```jsonc
+{ "inbound": ["dns-in"], "action": "hijack-dns" }
+```
+
+dnsmasq：
+
+```sh
+uci set dhcp.@dnsmasq[0].noresolv='1'
+uci -q delete dhcp.@dnsmasq[0].server
+uci add_list dhcp.@dnsmasq[0].server='127.0.0.1#5353'
+```
+
+注意：`direct` 入站绑定失败会让整个 sing-box 启动失败（FATAL），不是只影响 DNS。
+
+## 看门狗策略
+
+探测失败时**不重启进程**，而是通过 clash API 切节点：
+
+```sh
+# 测节点
+curl -H "Authorization: Bearer $SECRET" \
+  "http://127.0.0.1:9090/proxies/<节点>/delay?url=https%3A%2F%2Fwww.gstatic.com%2Fgenerate_204&timeout=5000"
+# 切换
+curl -X PUT -H "Authorization: Bearer $SECRET" \
+  -d '{"name":"<节点>"}' http://127.0.0.1:9090/proxies/proxy
+```
+
+只有全部候选节点都不可用才重启进程。
+
+## 网络重连自动恢复
+
+`/etc/hotplug.d/iface/99-singbox`：WAN up 时检查 nft 表，缺失才重建（存在则不动，避免断连接）。
+
 ## 关键坑
 
 ### 1. tproxy 表 100 的路由

@@ -1,0 +1,7 @@
+#!/bin/sh
+# 防火墙 reload 会清掉自定义表，这里补回
+sleep 2
+if ! nft list table inet sb >/dev/null 2>&1; then
+    logger -t singbox "firewall reload，重建 tproxy 规则"
+    /etc/sing-box/nft-up.sh
+fi
