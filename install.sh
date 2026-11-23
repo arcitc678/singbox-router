@@ -6,7 +6,6 @@
 
 set -e
 SB_DIR=/etc/sing-box
-GH="https://github.com/SagerNet/sing-box/releases/latest/download"
 GH_RAW="https://raw.githubusercontent.com/SagerNet"
 CFG_SRC="${1:-}"
 
@@ -26,8 +25,16 @@ echo "    $ARCH"
 
 say "2/8 下载 sing-box"
 TMP=$(mktemp -d)
-curl -sSL -m 300 -o "$TMP/sb.tar.gz" "$GH/sing-box-latest-linux-$ARCH-musl.tar.gz" \
-  || curl -sSL -m 300 -o "$TMP/sb.tar.gz" "$GH/sing-box-latest-linux-$ARCH.tar.gz"
+# 解析最新版本号（没有 latest 别名资产，必须拼版本）
+VERSION=$(curl -sSL -m 20 "https://api.github.com/repos/SagerNet/sing-box/releases/latest" \
+  | grep -oE '"tag_name"[^"]*"v?[0-9]+\.[0-9]+\.[0-9]+[^"]*"' \
+  | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[0-9a-zA-Z.\-]*')
+[ -n "$VERSION" ] || die "无法获取最新版本号"
+echo "    版本: v$VERSION"
+BASE="https://github.com/SagerNet/sing-box/releases/download/v$VERSION"
+curl -sSL -m 300 -o "$TMP/sb.tar.gz" "$BASE/sing-box-$VERSION-linux-$ARCH-musl.tar.gz" \
+  || curl -sSL -m 300 -o "$TMP/sb.tar.gz" "$BASE/sing-box-$VERSION-linux-$ARCH.tar.gz"
+[ -s "$TMP/sb.tar.gz" ] || die "下载失败"
 tar -xzf "$TMP/sb.tar.gz" -C "$TMP"
 BIN=$(find "$TMP" -name sing-box -type f | head -1)
 [ -n "$BIN" ] || die "下载失败"
