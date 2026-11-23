@@ -36,6 +36,24 @@ homeproxy 把 sing-box 二进制和配置生成器绑死（写这份文档时是
 | `panel/index.html` | 自写面板（切换节点/测速/模式） |
 | `luci/` | LuCI 菜单、ACL、视图 |
 
+
+## 一键安装
+
+新装 OpenWrt 后，三条命令搞定：
+
+```sh
+git clone https://github.com/arcitc678/singbox-router.git
+cd singbox-router
+sh install.sh /path/to/你的 config.json   # 不带参数则用模板
+```
+
+脚本会自动：检测架构 → 下载 sing-box → 装配置/规则集/脚本/面板/LuCI → 启用服务 → 配定时任务。
+
+装完访问：
+
+- 面板：`http://<路由器IP>:9090/ui/`
+- LuCI：服务 → Sing-Box
+
 ## 部署
 
 ### 1. 下载内核
