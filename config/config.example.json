@@ -1,0 +1,570 @@
+{
+  "log": {
+    "level": "warn",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "local",
+        "type": "udp",
+        "server": "223.5.5.5"
+      },
+      {
+        "tag": "remote",
+        "type": "https",
+        "server": "1.1.1.1",
+        "detour": "proxy"
+      }
+    ],
+    "rules": [
+      {
+        "rule_set": [
+          "geosite-cn"
+        ],
+        "server": "local"
+      },
+      {
+        "domain_suffix": [
+          ".cn"
+        ],
+        "server": "local"
+      },
+      {
+        "query_type": [
+          "AAAA"
+        ],
+        "server": "local"
+      }
+    ],
+    "final": "remote",
+    "strategy": "prefer_ipv4"
+  },
+  "inbounds": [
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 7895
+    },
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "127.0.0.1",
+      "listen_port": 7890
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "hysteria2",
+      "tag": "jp-hy2",
+      "server": "<SERVER_IP>",
+      "server_port": 8443,
+      "password": "<PASSWORD>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "insecure": true,
+        "alpn": [
+          "h3"
+        ]
+      },
+      "server_ports": [
+        "20000:20100"
+      ],
+      "hop_interval": "30s",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vless",
+      "tag": "jp-reality",
+      "server": "<SERVER_IP>",
+      "server_port": 443,
+      "uuid": "<UUID>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "<REALITY_PUBLIC_KEY>",
+          "short_id": "9e48f39e"
+        }
+      },
+      "flow": "xtls-rprx-vision",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "tuic",
+      "tag": "jp-tuic",
+      "server": "<SERVER_IP>",
+      "server_port": 8444,
+      "uuid": "<UUID>",
+      "password": "<PASSWORD>",
+      "congestion_control": "bbr",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "insecure": true,
+        "alpn": [
+          "h3"
+        ]
+      },
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "anytls",
+      "tag": "jp-anytls",
+      "server": "<SERVER_IP>",
+      "server_port": 2096,
+      "password": "<PASSWORD>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "insecure": true
+      },
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vless",
+      "tag": "jp-anyre",
+      "server": "<SERVER_IP>",
+      "server_port": 2097,
+      "uuid": "<UUID>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "<REALITY_PUBLIC_KEY>",
+          "short_id": "a1b2c3d4"
+        }
+      },
+      "flow": "xtls-rprx-vision",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vmess",
+      "tag": "jp-cdn",
+      "server": "<SERVER_IP>",
+      "server_port": 443,
+      "uuid": "<UUID>",
+      "security": "auto",
+      "transport": {
+        "type": "ws",
+        "path": "/argo",
+        "headers": {
+          "Host": "<CDN_HOST>"
+        }
+      },
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>"
+      },
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "hysteria2",
+      "tag": "us-hy2",
+      "server": "<SERVER_IP>",
+      "server_port": 8882,
+      "password": "<PASSWORD>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "insecure": true,
+        "alpn": [
+          "h3"
+        ]
+      },
+      "server_ports": [
+        "20000:20100"
+      ],
+      "hop_interval": "30s",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vless",
+      "tag": "us-reality",
+      "server": "<SERVER_IP>",
+      "server_port": 9443,
+      "uuid": "<UUID>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "<REALITY_PUBLIC_KEY>",
+          "short_id": "bbe5f0cd"
+        }
+      },
+      "flow": "xtls-rprx-vision",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "tuic",
+      "tag": "us-tuic",
+      "server": "<SERVER_IP>",
+      "server_port": 8883,
+      "uuid": "<UUID>",
+      "password": "<PASSWORD>",
+      "congestion_control": "bbr",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "insecure": true,
+        "alpn": [
+          "h3"
+        ]
+      },
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "anytls",
+      "tag": "us-anytls",
+      "server": "<SERVER_IP>",
+      "server_port": 2096,
+      "password": "<PASSWORD>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "insecure": true
+      },
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vless",
+      "tag": "us-anyre",
+      "server": "<SERVER_IP>",
+      "server_port": 2097,
+      "uuid": "<UUID>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "<REALITY_PUBLIC_KEY>",
+          "short_id": "c3d4e5f6"
+        }
+      },
+      "flow": "xtls-rprx-vision",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vmess",
+      "tag": "us-cdn",
+      "server": "<SERVER_IP>",
+      "server_port": 443,
+      "uuid": "<UUID>",
+      "security": "auto",
+      "transport": {
+        "type": "ws",
+        "path": "/argo",
+        "headers": {
+          "Host": "<CDN_HOST>"
+        }
+      },
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>"
+      },
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vless",
+      "tag": "my-reality",
+      "server": "<SERVER_IP>",
+      "server_port": 9444,
+      "uuid": "<UUID>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "<REALITY_PUBLIC_KEY>",
+          "short_id": ""
+        }
+      },
+      "flow": "xtls-rprx-vision",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vless",
+      "tag": "my-reality443",
+      "server": "<SERVER_IP>",
+      "server_port": 443,
+      "uuid": "<UUID>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "<REALITY_PUBLIC_KEY>",
+          "short_id": ""
+        }
+      },
+      "flow": "xtls-rprx-vision",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "anytls",
+      "tag": "my-anytls",
+      "server": "<SERVER_IP>",
+      "server_port": 2096,
+      "password": "<PASSWORD>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "insecure": true
+      },
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vless",
+      "tag": "my-anyre",
+      "server": "<SERVER_IP>",
+      "server_port": 2097,
+      "uuid": "<UUID>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "<REALITY_PUBLIC_KEY>",
+          "short_id": "b2c3d4e5"
+        }
+      },
+      "flow": "xtls-rprx-vision",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "hysteria2",
+      "tag": "my-hy2",
+      "server": "<SERVER_IP>",
+      "server_port": 20000,
+      "password": "<PASSWORD>",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "insecure": true,
+        "alpn": [
+          "h3"
+        ]
+      },
+      "server_ports": [
+        "20000:20100"
+      ],
+      "hop_interval": "30s",
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "tuic",
+      "tag": "my-tuic",
+      "server": "<SERVER_IP>",
+      "server_port": 20001,
+      "uuid": "<UUID>",
+      "password": "<PASSWORD>",
+      "congestion_control": "bbr",
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>",
+        "insecure": true,
+        "alpn": [
+          "h3"
+        ]
+      },
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "vmess",
+      "tag": "my-cdn",
+      "server": "<SERVER_IP>",
+      "server_port": 443,
+      "uuid": "<UUID>",
+      "security": "auto",
+      "transport": {
+        "type": "ws",
+        "path": "/argo",
+        "headers": {
+          "Host": "<CDN_HOST>"
+        }
+      },
+      "tls": {
+        "enabled": true,
+        "server_name": "<SNI_DOMAIN>"
+      },
+      "bind_interface": "eth0",
+      "routing_mark": 2
+    },
+    {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [
+        "jp-hy2",
+        "jp-reality",
+        "jp-tuic",
+        "jp-anytls",
+        "jp-anyre",
+        "us-hy2",
+        "us-reality",
+        "us-tuic",
+        "us-anytls",
+        "us-anyre",
+        "my-reality",
+        "my-reality443",
+        "my-anytls",
+        "my-anyre",
+        "my-hy2",
+        "my-tuic"
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "10m",
+      "tolerance": 50
+    },
+    {
+      "type": "selector",
+      "tag": "proxy",
+      "outbounds": [
+        "auto",
+        "jp-hy2",
+        "jp-reality",
+        "jp-tuic",
+        "jp-anytls",
+        "jp-anyre",
+        "jp-cdn",
+        "us-hy2",
+        "us-reality",
+        "us-tuic",
+        "us-anytls",
+        "us-anyre",
+        "us-cdn",
+        "my-reality",
+        "my-reality443",
+        "my-anytls",
+        "my-anyre",
+        "my-hy2",
+        "my-tuic",
+        "my-cdn"
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "clash_mode": "Direct",
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "Global",
+        "outbound": "proxy"
+      },
+      {
+        "protocol": "dns",
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "rule_set": [
+          "geosite-cn"
+        ],
+        "outbound": "direct"
+      },
+      {
+        "rule_set": [
+          "geoip-cn"
+        ],
+        "outbound": "direct"
+      }
+    ],
+    "rule_set": [
+      {
+        "tag": "geosite-cn",
+        "type": "local",
+        "format": "binary",
+        "path": "/etc/sing-box/geosite-cn.srs"
+      },
+      {
+        "tag": "geoip-cn",
+        "type": "local",
+        "format": "binary",
+        "path": "/etc/sing-box/geoip-cn.srs"
+      }
+    ],
+    "final": "proxy",
+    "auto_detect_interface": true,
+    "default_domain_resolver": {
+      "server": "local"
+    }
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "0.0.0.0:9090",
+      "secret": "<API_SECRET>",
+      "external_ui": "/etc/sing-box/ui"
+    },
+    "cache_file": {
+      "enabled": true,
+      "path": "/etc/sing-box/cache.db"
+    }
+  }
+}

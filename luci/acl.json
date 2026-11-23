@@ -1,0 +1,7 @@
+{
+  "luci-app-singbox": {
+    "description": "Sing-Box panel",
+    "read": { "ubus": { "session": [ "access" ] } },
+    "write": {}
+  }
+}

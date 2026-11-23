@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sing-Box 面板</title>
+<style>
+:root{--bg:#101827;--panel:#182234;--panel2:#1f2b40;--ink:#f8f5ee;--ink2:#c6ccd6;--ink3:#8a93a3;
+--accent:#f8f5ee;--accent-fg:#182234;--ok:#3ccf8e;--bad:#e0857c;--line:#243247;--warn:#f5c451}
+html[data-theme="light"]{--bg:#fff;--panel:#f8f5ee;--panel2:#efebe0;--ink:#182234;--ink2:#5a6478;
+--ink3:#8a93a3;--accent:#182234;--accent-fg:#f8f5ee;--ok:#22b573;--bad:#b4443c;--line:#e6e1d5;--warn:#b8860b}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+background:var(--bg);color:var(--ink);padding-bottom:80px}
+.wrap{max-width:820px;margin:0 auto;padding:18px 16px}
+header{display:flex;align-items:center;gap:12px;padding:6px 0 18px}
+h1{font-size:21px;font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--ink3);font-size:12.5px;margin-top:2px}
+.grow{flex:1}
+.iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--panel);
+color:var(--ink2);display:grid;place-items:center;cursor:pointer;font-size:15px}
+.status{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);
+border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(60,207,142,.15)}
+.traffic{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.tcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tlabel{color:var(--ink3);font-size:11.5px;margin-bottom:4px}
+.tval{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+h2{font-size:13px;color:var(--ink3);font-weight:600;margin:18px 0 10px;letter-spacing:.03em}
+.group{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.ghead{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.gname{font-weight:600;font-size:14px}
+.gtag{font-size:11px;color:var(--ink3);background:var(--panel2);padding:2px 7px;border-radius:20px}
+.node{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);
+cursor:pointer;transition:background .15s}
+.node:last-child{border-bottom:0}
+.node:active{background:var(--panel2)}
+.node.sel{background:var(--panel2)}
+.nname{flex:1;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms{font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink3);min-width:52px;text-align:right}
+.ms.ok{color:var(--ok)} .ms.mid{color:var(--warn)} .ms.bad{color:var(--bad)}
+.check{color:var(--ink3);font-size:13px}
+.modes{display:flex;gap:8px;margin-bottom:6px}
+.mode{flex:1;text-align:center;padding:10px;border-radius:10px;border:1px solid var(--line);
+background:var(--panel);color:var(--ink2);font-size:13px;cursor:pointer}
+.mode.active{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+.foot{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);
+padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;max-width:820px;margin:0 auto}
+.btn{flex:1;text-align:center;padding:12px;border-radius:11px;border:1px solid var(--line);
+background:var(--panel);color:var(--ink);font-size:14px;cursor:pointer;font-weight:500}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.loading{color:var(--ink3);font-size:13px;padding:16px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="grow">
+      <h1>Sing-Box</h1>
+      <div class="sub" id="ver">连接中…</div>
+    </div>
+    <button class="iconbtn" id="theme" title="切换主题">◐</button>
+  </header>
+
+  <div class="status">
+    <span class="dot" id="dot"></span>
+    <span class="grow" id="st">已连接</span>
+    <span class="sub" id="mode-now"></span>
+  </div>
+
+  <div class="traffic">
+    <div class="tcard"><div class="tlabel">上传</div><div class="tval" id="up">0 B</div></div>
+    <div class="tcard"><div class="tlabel">下载</div><div class="tval" id="down">0 B</div></div>
+  </div>
+
+  <h2>模式</h2>
+  <div class="modes">
+    <div class="mode" data-mode="rule">智能分流</div>
+    <div class="mode" data-mode="global">全局代理</div>
+    <div class="mode" data-mode="direct">直连</div>
+  </div>
+
+  <h2>节点</h2>
+  <div id="groups"><div class="loading">加载中…</div></div>
+</div>
+
+<div class="foot">
+  <button class="btn" id="test">全部测速</button>
+  <button class="btn primary" id="refresh">刷新</button>
+</div>
+
+<script>
+const SECRET = 'amv-9090-2026';
+const BASE = location.origin;
+const H = {'Authorization':'Bearer '+SECRET};
+
+const $ = id => document.getElementById(id);
+const fmt = b => { if(!b) return '0 B'; const u=['B','KB','MB','GB']; let i=0; while(b>=1024&&i<3){b/=1024;i++} return b.toFixed(i?1:0)+' '+u[i]; };
+
+async function api(path, opts={}) {
+  const r = await fetch(BASE + path, {...opts, headers:{...H, ...(opts.headers||{})}});
+  return r.json();
+}
+
+async function load() {
+  try {
+    const [v, cfg, groups, conns] = await Promise.all([
+      api('/version'), api('/configs'), api('/proxies'), api('/connections')
+    ]);
+    $('ver').textContent = v.version || 'sing-box';
+    const mode = (cfg.mode || 'rule').toLowerCase();
+    document.querySelectorAll('.mode').forEach(m => m.classList.toggle('active', m.dataset.mode === mode));
+    $('mode-now').textContent = mode === 'global' ? '全局' : mode === 'direct' ? '直连' : '分流';
+
+    // 统计流量
+    let up = 0, down = 0;
+    (conns.connections || []).forEach(c => { up += c.upload || 0; down += c.download || 0; });
+    $('up').textContent = fmt(up); $('down').textContent = fmt(down);
+    $('st').textContent = '运行中 · ' + (conns.connections || []).length + ' 个连接';
+    $('dot').style.background = 'var(--ok)';
+
+    render(groups.proxies || {});
+  } catch (e) {
+    $('st').textContent = '连接失败：' + e.message;
+    $('dot').style.background = 'var(--bad)';
+  }
+}
+
+function render(proxies) {
+  const order = ['proxy', 'auto'];
+  const names = Object.keys(proxies).filter(n => {
+    const t = proxies[n].type;
+    if (n === 'GLOBAL') return false;
+    return t === 'Selector' || t === 'URLTest' || t === 'Fallback';
+  }).sort((a,b) => {
+    const ia = order.indexOf(a), ib = order.indexOf(b);
+    return (ia<0?99:ia) - (ib<0?99:ib);
+  });
+
+  let html = '';
+  names.forEach(gname => {
+    const g = proxies[gname];
+    const items = g.all || [];
+    if (!items.length) return;
+    html += `<div class="group"><div class="ghead">
+      <span class="gname">${gname === 'proxy' ? '手动选择' : gname === 'auto' ? '自动选择（最快）' : gname}</span>
+      <span class="gtag">${gname === 'proxy' ? '手动' : '自动'}</span>
+      <span class="grow"></span>
+      <span class="sub">${g.now || ''}</span>
+    </div>`;
+    items.forEach(tag => {
+      const p = proxies[tag] || {};
+      if (p.type === 'Selector' || p.type === 'URLTest' || p.type === 'Fallback') return;
+      const sel = tag === g.now;
+      const delay = (p.history && p.history.length) ? p.history[p.history.length-1].delay : 0;
+      const cls = delay > 0 ? (delay < 200 ? 'ok' : delay < 400 ? 'mid' : 'bad') : '';
+      html += `<div class="node ${sel?'sel':''}" data-group="${gname}" data-tag="${tag}">
+        <span class="nname">${tag}</span>
+        <span class="ms ${cls}">${delay>0?delay+' ms':'—'}</span>
+        <span class="check">${sel?'✓':''}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  $('groups').innerHTML = html || '<div class="loading">没有可切换的节点</div>';
+
+  document.querySelectorAll('.node').forEach(el => {
+    el.onclick = async () => {
+      const g = el.dataset.group, t = el.dataset.tag;
+      await fetch(`${BASE}/proxies/${encodeURIComponent(g)}`, {
+        method: 'PUT', headers: {...H, 'content-type':'application/json'},
+        body: JSON.stringify({name: t})
+      });
+      load();
+    };
+  });
+}
+
+document.getElementById('theme').onclick = () => {
+  const cur = document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('sb-theme', document.documentElement.dataset.theme);
+};
+if (localStorage.getItem('sb-theme')) document.documentElement.dataset.theme = localStorage.getItem('sb-theme');
+
+document.querySelectorAll('.mode').forEach(m => {
+  m.onclick = async () => {
+    await fetch(BASE + '/configs', {
+      method: 'PATCH', headers: {...H, 'content-type':'application/json'},
+      body: JSON.stringify({mode: m.dataset.mode})
+    });
+    load();
+  };
+});
+
+$('refresh').onclick = load;
+$('test').onclick = async () => {
+  const all = document.querySelectorAll('.node');
+  for (const el of all) {
+    const t = el.dataset.tag;
+    try {
+      const d = await api(`/proxies/${encodeURIComponent(t)}/delay?url=${encodeURIComponent('https://www.gstatic.com/generate_204')}&timeout=5000`);
+      const ms = el.querySelector('.ms');
+      ms.textContent = d.delay > 0 ? d.delay + ' ms' : '超时';
+      ms.className = 'ms ' + (d.delay>0 ? (d.delay<200?'ok':d.delay<400?'mid':'bad') : 'bad');
+    } catch(e) {}
+  }
+};
+
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>
