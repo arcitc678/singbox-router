@@ -10,6 +10,7 @@ start_service() {
     procd_set_param stdout 1
     procd_set_param stderr 1
     procd_close_instance
+    /etc/sing-box/ipv6-up.sh eth0 >/dev/null 2>&1
     /etc/sing-box/nft-up.sh
 }
 

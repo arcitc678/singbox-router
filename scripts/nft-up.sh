@@ -14,14 +14,15 @@ table inet sb {
     type filter hook prerouting priority mangle; policy accept;
     ip daddr @local4 return
     ip6 daddr @local6 return
+    meta nfproto ipv6 return
     ip daddr @cn4 return
     meta l4proto { tcp, udp } tproxy ip to :7895 meta mark set 1 accept
-    meta l4proto { tcp, udp } tproxy ip6 to :7895 meta mark set 1 accept
   }
   chain out {
     type route hook output priority mangle; policy accept;
     ip daddr @local4 return
     ip6 daddr @local6 return
+    meta nfproto ipv6 return
     ip daddr @cn4 return
     meta mark 1 return
     meta mark 2 return

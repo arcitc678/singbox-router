@@ -196,6 +196,42 @@ curl -X PUT -H "Authorization: Bearer $SECRET" \
 
 `/etc/hotplug.d/iface/99-singbox`：WAN up 时检查 nft 表，缺失才重建（存在则不动，避免断连接）。
 
+
+## IPv6 支持
+
+### 上游（H3C MSR830 / 联通 PPPoE）
+
+```text
+interface Dialer 0
+  ipv6 address auto          # PPPoE SLAAC
+  ipv6 dhcp client pd 1      # 请求前缀委托，联通给 /62
+
+interface Vlan-interface 1
+  ipv6 address 1 ::1/64      # 用 PD 前缀
+  undo ipv6 nd ra halt       # 下发 RA
+```
+
+保存：`save force`。改前备份 `display current-configuration`。
+
+### OpenWrt（252）
+
+`ipv6-up.sh` 在服务启动和 WAN 上线时执行：
+
+```sh
+sysctl -w net.ipv6.conf.eth0.disable_ipv6=0
+sysctl -w net.ipv6.conf.eth0.accept_ra=2
+sysctl -w net.ipv6.conf.eth0.autoconf=1
+```
+
+拿到 SLAAC 地址后，v6 **不经过 tproxy**（nft 里 `meta nfproto ipv6 return`），
+这样：
+
+- 路由器自己可以用 v6 连机场的 v6 入口（v4 被墙的节点复活）
+- 局域网客户端仍走 v4 代理，不会因为 v6 直连而泄漏
+
+DNS 里 AAAA 拒绝规则只对 `dns-in`（客户端查询）生效，
+sing-box 内部解析节点域名时放行 AAAA，否则 v6 节点连不上。
+
 ## 关键坑
 
 ### 1. tproxy 表 100 的路由
