@@ -50,6 +50,9 @@ padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px
 background:var(--panel);color:var(--ink);font-size:14px;cursor:pointer;font-weight:500}
 .btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .loading{color:var(--ink3);font-size:13px;padding:16px;text-align:center}
+.more{padding:11px 14px;text-align:center;color:var(--ink3);font-size:12.5px;cursor:pointer;
+border-top:1px solid var(--line);background:var(--panel)}
+.more:active{background:var(--panel2)}
 </style>
 </head>
 <body>
@@ -95,6 +98,7 @@ const BASE = location.origin;
 const H = {'Authorization':'Bearer '+SECRET};
 
 const $ = id => document.getElementById(id);
+const expanded = { vps: false, ship: false };
 const fmt = b => { if(!b) return '0 B'; const u=['B','KB','MB','GB']; let i=0; while(b>=1024&&i<3){b/=1024;i++} return b.toFixed(i?1:0)+' '+u[i]; };
 
 async function api(path, opts={}) {
@@ -127,52 +131,75 @@ async function load() {
 }
 
 function render(proxies) {
-  const order = ['proxy', 'auto'];
-  const names = Object.keys(proxies).filter(n => {
-    const t = proxies[n].type;
-    if (n === 'GLOBAL') return false;
-    return t === 'Selector' || t === 'URLTest' || t === 'Fallback';
-  }).sort((a,b) => {
-    const ia = order.indexOf(a), ib = order.indexOf(b);
-    return (ia<0?99:ia) - (ib<0?99:ib);
-  });
+  const cleanName = t => String(t).replace(/^ship\d+\s*/, '').replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '').trim();
+  const isGroup = t => {
+    const p = proxies[t] || {};
+    return ['Selector','URLTest','Fallback'].includes(p.type);
+  };
+  const gname = 'proxy';
+  const gdata = proxies.proxy || {};
+
+  const items = Object.keys(proxies).filter(t =>
+    !isGroup(t) && !['direct','block','Direct','Reject','Compatible','GLOBAL'].includes(t) &&
+    (proxies[t].type !== 'Direct' && proxies[t].type !== 'Reject')
+  );
+
+  const delayOf = t => {
+    const h = (proxies[t] || {}).history || [];
+    return h.length ? (h[h.length - 1].delay || 0) : 0;
+  };
+
+  const vps  = items.filter(t => !t.startsWith('ship'));
+  const ship = items.filter(t =>  t.startsWith('ship'));
+  const sortBy = arr => arr.slice().sort((a, b) => (delayOf(a) || 99999) - (delayOf(b) || 99999));
 
   let html = '';
-  names.forEach(gname => {
-    const g = proxies[gname];
-    const items = g.all || [];
-    if (!items.length) return;
+  const section = (title, arr, key) => {
+    if (!arr.length) return;
+    const sorted = sortBy(arr);
+    const showAll = expanded[key];
+    const list = showAll ? sorted : sorted.slice(0, 5);
+    const nowTag = gdata.now || '';
     html += `<div class="group"><div class="ghead">
-      <span class="gname">${gname === 'proxy' ? '手动选择' : gname === 'auto' ? '自动选择（最快）' : gname}</span>
-      <span class="gtag">${gname === 'proxy' ? '手动' : '自动'}</span>
+      <span class="gname">${title}</span>
+      <span class="gtag">${arr.length}</span>
       <span class="grow"></span>
-      <span class="sub">${g.now || ''}</span>
+      <span class="sub">当前：${cleanName(nowTag)}</span>
     </div>`;
-    items.forEach(tag => {
-      const p = proxies[tag] || {};
-      if (p.type === 'Selector' || p.type === 'URLTest' || p.type === 'Fallback') return;
-      const sel = tag === g.now;
-      const delay = (p.history && p.history.length) ? p.history[p.history.length-1].delay : 0;
+    list.forEach(tag => {
+      const sel = tag === nowTag;
+      const delay = delayOf(tag);
       const cls = delay > 0 ? (delay < 200 ? 'ok' : delay < 400 ? 'mid' : 'bad') : '';
+      const name = cleanName(tag);
       html += `<div class="node ${sel?'sel':''}" data-group="${gname}" data-tag="${tag}">
-        <span class="nname">${tag}</span>
+        <span class="nname">${name}</span>
         <span class="ms ${cls}">${delay>0?delay+' ms':'—'}</span>
         <span class="check">${sel?'✓':''}</span>
       </div>`;
     });
+    if (sorted.length > 5) {
+      html += `<div class="more" data-key="${key}">${showAll ? '收起' : '展开全部 ' + sorted.length + ' 个'}</div>`;
+    }
     html += '</div>';
-  });
+  };
+
+  section('VPS 节点', vps, 'vps');
+  section('机场节点', ship, 'ship');
+
   $('groups').innerHTML = html || '<div class="loading">没有可切换的节点</div>';
 
   document.querySelectorAll('.node').forEach(el => {
     el.onclick = async () => {
-      const g = el.dataset.group, t = el.dataset.tag;
-      await fetch(`${BASE}/proxies/${encodeURIComponent(g)}`, {
+      const grp = el.dataset.group, t = el.dataset.tag;
+      await fetch(`${BASE}/proxies/${encodeURIComponent(grp)}`, {
         method: 'PUT', headers: {...H, 'content-type':'application/json'},
         body: JSON.stringify({name: t})
       });
       load();
     };
+  });
+  document.querySelectorAll('.more').forEach(el => {
+    el.onclick = () => { expanded[el.dataset.key] = !expanded[el.dataset.key]; load(); };
   });
 }
 
@@ -195,15 +222,32 @@ document.querySelectorAll('.mode').forEach(m => {
 
 $('refresh').onclick = load;
 $('test').onclick = async () => {
-  const all = document.querySelectorAll('.node');
-  for (const el of all) {
-    const t = el.dataset.tag;
-    try {
-      const d = await api(`/proxies/${encodeURIComponent(t)}/delay?url=${encodeURIComponent('https://www.gstatic.com/generate_204')}&timeout=5000`);
-      const ms = el.querySelector('.ms');
-      ms.textContent = d.delay > 0 ? d.delay + ' ms' : '超时';
-      ms.className = 'ms ' + (d.delay>0 ? (d.delay<200?'ok':d.delay<400?'mid':'bad') : 'bad');
-    } catch(e) {}
+  const btn = $('test');
+  btn.textContent = '测速中…';
+  btn.disabled = true;
+  try {
+    // 一次请求测完整组（路由器内部并发）
+    const res = await api('/group/proxy/delay?url=' +
+      encodeURIComponent('https://www.gstatic.com/generate_204') + '&timeout=6000');
+    const map = res || {};
+    document.querySelectorAll('.node').forEach(el => {
+      const t = el.dataset.tag;
+      const ms = map[t];
+      const span = el.querySelector('.ms');
+      if (typeof ms === 'number' && ms > 0) {
+        span.textContent = ms + ' ms';
+        span.className = 'ms ' + (ms < 200 ? 'ok' : ms < 400 ? 'mid' : 'bad');
+      } else {
+        span.textContent = '超时';
+        span.className = 'ms bad';
+      }
+    });
+  } catch (e) {
+    document.querySelectorAll('.node .ms').forEach(s => { s.textContent = '—'; });
+  } finally {
+    btn.textContent = '全部测速';
+    btn.disabled = false;
+    setTimeout(load, 800);
   }
 };
 
